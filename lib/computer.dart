@@ -1,9 +1,29 @@
-class Memory {
-  List<int> state;
-  Memory(List<int> initialState) : state = List.of(initialState);
+import 'package:quiver/iterables.dart';
 
-  int operator [](int i) => state[i];
-  operator []=(int i, int val) => state[i] = val;
+class Memory {
+  final Map<int, int> _state;
+  Memory(List<int> initialState)
+      : _state = {
+          for (var entry in enumerate(initialState)) entry.index: entry.value
+        };
+
+  int operator [](int i) => _state.putIfAbsent(i, () => 0);
+  operator []=(int i, int val) {
+    if (i < 0) throw ArgumentError.value(i, 'i', 'WAT');
+    _state[i] = val;
+  }
+
+  List<int> toList() {
+    var result = <int>[];
+    for (var i = 0;
+        i <=
+            max<int>(
+                _state.entries.where((e) => e.value != 0).map((e) => e.key));
+        i++) {
+      result.add(this[i]);
+    }
+    return result;
+  }
 }
 
 class Output {
@@ -27,36 +47,56 @@ class Input {
 enum State { ready, waitingInput, stopped }
 
 abstract class Mode {
-  int read(int param, Memory state);
-  void write(int param, int value, Memory state);
+  int read(int param, Memory state, int relativeBase);
+  void write(int param, int value, Memory state, int relativeBase);
 }
 
 class ImmediateMode implements Mode {
   @override
-  int read(int position, Memory state) => state[position];
+  int read(int position, Memory state, int relativeBase) => state[position];
 
   @override
-  void write(int position, int value, Memory state) =>
+  void write(int position, int value, Memory state, int relativeBase) =>
       throw UnsupportedError('ImmediateMode does not support writes.');
 }
 
 class PositionMode implements Mode {
   @override
-  int read(int position, Memory state) => state[state[position]];
+  int read(int position, Memory state, int relativeBase) =>
+      state[state[position]];
 
   @override
-  void write(int position, int value, Memory state) =>
+  void write(int position, int value, Memory state, int relativeBase) =>
       state[state[position]] = value;
 }
 
-class Modes {
-  final List<int> _codes;
-  Modes._(this._codes);
-  static Modes fromOpcode(int opcode) => Modes._(unpackModes(opcode));
-  Mode operator [](int i) =>
-      i < _codes.length && _codes[i] == 1 ? ImmediateMode() : PositionMode();
+class RelativeMode implements Mode {
+  @override
+  int read(int position, Memory state, int relativeBase) {
+    return state[state[position] + relativeBase];
+  }
+
+  @override
+  void write(int position, int value, Memory state, int relativeBase) =>
+      state[state[position] + relativeBase] = value;
 }
 
+class Modes {
+  final List<Mode> _modes;
+  Modes._(this._modes);
+  static Modes fromOpcode(int opcode) =>
+      Modes._(unpackModes(opcode).map(modeFromCode).toList());
+  Mode operator [](int i) => i < _modes.length ? _modes[i] : PositionMode();
+
+  @override
+  String toString() => _modes.toString();
+}
+
+Mode modeFromCode(int code) => {
+      0: PositionMode(),
+      1: ImmediateMode(),
+      2: RelativeMode()
+    }.putIfAbsent(code, () => throw ArgumentError.value(code, 'code', 'WAT'));
 List<int> unpackModes(int opcode) {
   var result = <int>[];
   opcode ~/= 100;
@@ -75,11 +115,13 @@ const $jumpIfTrue = 5;
 const $jumpIfFalse = 6;
 const $lessThan = 7;
 const $equals = 8;
+const $setBase = 9;
 
 const $stop = 99;
 
 class Computer {
   int position = 0;
+  int relativeBase = 0;
   Memory memory;
   State state = State.ready;
   Input input;
@@ -96,9 +138,9 @@ class Computer {
   }
 
   int read(int argNum, Modes modes) =>
-      modes[argNum].read(position + argNum + 1, memory);
+      modes[argNum].read(position + argNum + 1, memory, relativeBase);
   void write(int argNum, int value, Modes modes) =>
-      modes[argNum].write(position + argNum + 1, value, memory);
+      modes[argNum].write(position + argNum + 1, value, memory, relativeBase);
 
   void step() {
     if (state == State.stopped) throw UnsupportedError('already stopped');
@@ -132,7 +174,8 @@ class Computer {
         }
         break;
       case $write:
-        output.write(read(0, modes));
+        var val = read(0, modes);
+        output.write(val);
         position += 2;
         break;
       case $stop:
@@ -166,9 +209,13 @@ class Computer {
         write(2, (first == second) ? 1 : 0, modes);
         position += 4;
         break;
+      case $setBase:
+        relativeBase += read(0, modes);
+        position += 2;
+        break;
 
       default:
-        throw 'WAT';
+        throw 'WAT $instruction';
     }
   }
 }
