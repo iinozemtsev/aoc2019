@@ -1,0 +1,205 @@
+const initialState = [
+  1,
+  0,
+  0,
+  3,
+  1,
+  1,
+  2,
+  3,
+  1,
+  3,
+  4,
+  3,
+  1,
+  5,
+  0,
+  3,
+  2,
+  10,
+  1,
+  19,
+  1,
+  19,
+  9,
+  23,
+  1,
+  23,
+  6,
+  27,
+  2,
+  27,
+  13,
+  31,
+  1,
+  10,
+  31,
+  35,
+  1,
+  10,
+  35,
+  39,
+  2,
+  39,
+  6,
+  43,
+  1,
+  43,
+  5,
+  47,
+  2,
+  10,
+  47,
+  51,
+  1,
+  5,
+  51,
+  55,
+  1,
+  55,
+  13,
+  59,
+  1,
+  59,
+  9,
+  63,
+  2,
+  9,
+  63,
+  67,
+  1,
+  6,
+  67,
+  71,
+  1,
+  71,
+  13,
+  75,
+  1,
+  75,
+  10,
+  79,
+  1,
+  5,
+  79,
+  83,
+  1,
+  10,
+  83,
+  87,
+  1,
+  5,
+  87,
+  91,
+  1,
+  91,
+  9,
+  95,
+  2,
+  13,
+  95,
+  99,
+  1,
+  5,
+  99,
+  103,
+  2,
+  103,
+  9,
+  107,
+  1,
+  5,
+  107,
+  111,
+  2,
+  111,
+  9,
+  115,
+  1,
+  115,
+  6,
+  119,
+  2,
+  13,
+  119,
+  123,
+  1,
+  123,
+  5,
+  127,
+  1,
+  127,
+  9,
+  131,
+  1,
+  131,
+  10,
+  135,
+  1,
+  13,
+  135,
+  139,
+  2,
+  9,
+  139,
+  143,
+  1,
+  5,
+  143,
+  147,
+  1,
+  13,
+  147,
+  151,
+  1,
+  151,
+  2,
+  155,
+  1,
+  10,
+  155,
+  0,
+  99,
+  2,
+  14,
+  0,
+  0
+];
+
+/// Interprets an instruction at [position] and returns new position. -1 is
+/// halt.
+int step(List<int> state, int position) {
+  switch (state[position]) {
+    case 1:
+      state[state[position + 3]] =
+          state[state[position + 1]] + state[state[position + 2]];
+      return position + 4;
+    case 2:
+      state[state[position + 3]] =
+          state[state[position + 1]] * state[state[position + 2]];
+      return position + 4;
+    case 99:
+      return -1;
+    default:
+      throw ArgumentError.value(position, 'position',
+          'Unknown opcode (${state[position]}) at $position ');
+  }
+}
+
+void main() {
+  for (var noun = 0; noun < 100; noun++) {
+    for (var verb = 0; verb < 100; verb++) {
+      var state = List.of(initialState);
+      state[1] = noun;
+      state[2] = verb;
+      var position = 0;
+      while (position != -1) {
+        position = step(state, position);
+      }
+      if (state[0] == 19690720) {
+        print(100 * noun + verb);
+        break;
+      }
+    }
+  }
+}
