@@ -28,6 +28,29 @@ horizontal paddle tile (1 tile from the left and 2 tiles from the top) and a
 ball tile (6 tiles from the left and 5 tiles from the top).
 
 Start the game. How many block tiles are on the screen when the game exits?
+
+--- Part Two ---
+
+The game didn't run because you didn't put in any quarters. Unfortunately, you
+did not bring any quarters. Memory address 0 represents the number of quarters
+that have been inserted; set it to 2 to play for free.
+
+The arcade cabinet has a joystick that can move left and right. The software
+reads the position of the joystick with input instructions:
+
+If the joystick is in the neutral position, provide 0.
+If the joystick is tilted to the left, provide -1.
+If the joystick is tilted to the right, provide 1.
+
+The arcade cabinet also has a segment display capable of showing a single number
+that represents the player's current score. When three output instructions
+specify X=-1, Y=0, the third output instruction is not a tile; the value instead
+specifies the new score to show in the segment display. For example, a sequence
+of output values like -1,0,12345 would show 12345 as the player's current score.
+
+Beat the game by breaking all the blocks. What is your score after the last
+block is broken?
+
 */
 import 'dart:math';
 
@@ -48,12 +71,21 @@ extension TileExtension on Tile {
 
 class Screen {
   final points = <Point<int>, Tile>{};
+  int overheadScore;
   operator []=(Point<int> pt, Tile t) => points[pt] = t;
   Tile operator [](Point<int> pt) =>
       points.containsKey(pt) ? points[pt] : Tile.empty;
 
+  Point get ball => points.entries.singleWhere((e) => e.value == Tile.ball).key;
+  Point get paddle =>
+      points.entries.singleWhere((e) => e.value == Tile.paddle).key;
+  Rectangle<int> get boundingBox => points.keys.fold<Rectangle<int>>(
+      Rectangle<int>(0, 0, 0, 0),
+      (r, p) => r.boundingBox(Rectangle<int>(p.x, p.y, 0, 0)));
+
   String draw() {
     var sb = StringBuffer();
+    sb.writeln('Your score: $overheadScore');
     var bounds = points.keys.fold<Rectangle<int>>(Rectangle<int>(0, 0, 0, 0),
         (r, p) => r.boundingBox(Rectangle<int>(p.x, p.y, 0, 0)));
     for (var y = bounds.top; y <= bounds.bottom; y++) {
@@ -69,21 +101,36 @@ class Screen {
 class ArcadeCabinet {
   var screen = Screen();
   Computer computer;
-  ArcadeCabinet() : computer = Computer(Memory(input), Input([]));
+  ArcadeCabinet()
+      : computer = Computer(Memory(input), Input([]));
+
+  void insertCoins(int count) {
+    computer.memory[0] = count;
+  }
 
   void step() {
     while (
         computer.output.output.length < 3 && computer.state != State.stopped) {
       computer.step();
+      if (computer.state == State.waitingInput) {
+        computer.input.input.add((screen.ball.x - screen.paddle.x).sign);
+        computer.step();
+      }
     }
     if (computer.state != State.stopped) {
       var output = List.of(computer.output.output);
       computer.output.output.clear();
-      screen[Point<int>(output[0], output[1])] = Tile.values[output[2]];
+
+      var pt = Point<int>(output[0], output[1]);
+      if (pt.x == -1 && pt.y == 0) {
+        screen.overheadScore = output[2];
+      } else {
+        screen[pt] = Tile.values[output[2]];
+      }
     }
   }
 
-  void run() {
+  void run()  {
     while (computer.state != State.stopped) {
       step();
     }
@@ -92,10 +139,19 @@ class ArcadeCabinet {
 
 void main() {
   group('part1', () {
-    test('task', () {
+    test('task', () async {
       var cabinet = ArcadeCabinet();
-      cabinet.run();
+      await cabinet.run();
       print(cabinet.screen.points.values.where((t) => t == Tile.block).length);
+      print(cabinet.screen.draw());
+    });
+  });
+
+  group('part2', () {
+    test('task', () async {
+      var cabinet = ArcadeCabinet();
+      cabinet.insertCoins(2);
+      cabinet.run();
       print(cabinet.screen.draw());
     });
   });
