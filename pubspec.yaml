@@ -4,7 +4,7 @@ author: Ivan Inozemtsev <ivan.inozemtsev@gmail.com>
 desciption: advent of code solutions
 
 environment:
-  sdk: ">=2.3.0 <3.0.0"
+  sdk: ">=2.6.0 <3.0.0"
 
 dependencies:
   quiver: ^2.1.0
