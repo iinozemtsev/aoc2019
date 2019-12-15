@@ -24,13 +24,19 @@ class Memory {
     }
     return result;
   }
+
+  Memory clone() => Memory(<int>[]).._state.addAll(_state);
 }
 
 class Output {
-  final output = <int>[];
+  final List<int> output;
+  Output([List<int> output])
+      : output = output == null ? <int>[] : List.of(output);
   void write(int i) {
     output.add(i);
   }
+
+  Output clone() => Output(output);
 }
 
 class Input {
@@ -42,6 +48,10 @@ class Input {
     var r = input[_position++];
     return r;
   }
+
+  Input clone() => Input(List.of(input)).._position = _position;
+
+  String debugPrint() => '$_position at $input\ncanRead: ${canRead()}';
 }
 
 enum State { ready, waitingInput, stopped }
@@ -217,5 +227,14 @@ class Computer {
       default:
         throw 'WAT $instruction';
     }
+  }
+
+  Computer clone() {
+    var result = Computer(memory.clone(), input.clone());
+    result.position = position;
+    result.relativeBase = relativeBase;
+    result.state = state;
+    result.output = output.clone();
+    return result;
   }
 }

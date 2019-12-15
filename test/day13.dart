@@ -55,6 +55,7 @@ block is broken?
 import 'dart:math';
 
 import 'package:aoc_2019/computer.dart';
+import 'package:aoc_2019/points.dart';
 import 'package:test/test.dart';
 
 enum Tile { empty, wall, block, paddle, ball }
@@ -79,15 +80,11 @@ class Screen {
   Point get ball => points.entries.singleWhere((e) => e.value == Tile.ball).key;
   Point get paddle =>
       points.entries.singleWhere((e) => e.value == Tile.paddle).key;
-  Rectangle<int> get boundingBox => points.keys.fold<Rectangle<int>>(
-      Rectangle<int>(0, 0, 0, 0),
-      (r, p) => r.boundingBox(Rectangle<int>(p.x, p.y, 0, 0)));
 
   String draw() {
     var sb = StringBuffer();
     sb.writeln('Your score: $overheadScore');
-    var bounds = points.keys.fold<Rectangle<int>>(Rectangle<int>(0, 0, 0, 0),
-        (r, p) => r.boundingBox(Rectangle<int>(p.x, p.y, 0, 0)));
+    var bounds = points.keys.boundingBox;
     for (var y = bounds.top; y <= bounds.bottom; y++) {
       sb.writeln();
       for (var x = bounds.left; x < bounds.right; x++) {
