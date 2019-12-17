@@ -169,6 +169,23 @@ void main() {
       print(task1(input));
     });
   });
+  group('part2', () {
+    test('task', () {
+      // No idea how this works, took from reddit just to move on.
+      var inp = input;
+      var offset = int.parse(inp.substring(0, 7));
+
+      inp = (inp * 10000).substring(offset);
+      var list = parse(inp);
+      for (var i = 0; i < 100; i++) {
+        var sum = 0;
+        for (var j = list.length - 1; j >= 0; j--) {
+          list[j] = (sum += list[j]) % 10;
+        }
+      }
+      print('Part 2: ${list.sublist(0, 8).join('')}');
+    });
+  });
 }
 
 const input = '59791911701697178620772166487621926539855976237879'
