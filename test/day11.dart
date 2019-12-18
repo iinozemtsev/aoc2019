@@ -112,6 +112,7 @@ import 'dart:math';
 
 import 'package:aoc_2019/computer.dart';
 import 'package:test/test.dart';
+import 'package:aoc_2019/points.dart';
 
 enum Color { black, white }
 extension ColorExtension on Color {
@@ -131,8 +132,7 @@ class Field {
 
   String draw() {
     var sb = StringBuffer();
-    var bounds = painted.keys.fold<Rectangle<int>>(Rectangle<int>(0, 0, 0, 0),
-      (r, p) => r.boundingBox(Rectangle<int>(p.x, p.y, 0, 0)));
+    var bounds = painted.keys.boundingBox;
     for(var y = bounds.top; y <= bounds.bottom; y++) {
       sb.writeln();
       for (var x = bounds.left; x < bounds.right; x++) {
@@ -141,19 +141,6 @@ class Field {
     }
     return sb.toString();
   }
-}
-
-enum Direction { up, right, down, left }
-
-extension DirectionExtension on Direction {
-  Direction rotateLeft() => Direction.values[(index + 3) % 4];
-  Direction rotateRight() => Direction.values[(index + 1) % 4];
-  Point<int> toOffset() => {
-        Direction.up: Point<int>(0, -1),
-        Direction.right: Point<int>(1, 0),
-        Direction.down: Point<int>(0, 1),
-        Direction.left: Point<int>(-1, 0),
-      }.putIfAbsent(this, () => throw UnsupportedError('bad direction $this'));
 }
 
 class Robot {
